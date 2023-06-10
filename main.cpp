@@ -4,20 +4,19 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <boost/crc.hpp>
 
 // Расчёт CRC16 с полиномом MODBUS
-uint16_t calculateCRC(uint8_t* data, size_t length) {
+uint16_t crc16(uint8_t* data, size_t length) {
     uint16_t crc = 0xFFFF;
     for (size_t i = 0; i < length; i++) {
-        crc ^= (uint16_t)data[i];        // XOR byte into least sig. byte of crc
-        for (int j = 8; j != 0; j--) {    // Loop over each bit
-            if ((crc & 0x0001) != 0) {      // If the LSB is set
-                crc >>= 1;                    // Shift right and XOR 0xA001
+        crc ^= (uint16_t)data[i];
+        for (int j = 8; j != 0; j--) {
+            if ((crc & 0x0001) != 0) {
+                crc >>= 1;
                 crc ^= 0xA001;
+            } else {
+                crc >>= 1;
             }
-            else                            // Else LSB is not set
-                crc >>= 1;                    // Just shift right
         }
     }
     return crc;
@@ -104,7 +103,7 @@ int main(int argc, char *argv[]) {
         uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
 
         // Расчёт CRC запроса
-        uint16_t crc = calculateCRC(message, 2);
+        uint16_t crc = crc16(message, 2);
         uint8_t crc_high = crc >> 8;
         uint8_t crc_low = crc & 0xFF;
 
@@ -127,9 +126,11 @@ int main(int argc, char *argv[]) {
         if (memcmp(buffer, message, 4) == 0) {
 
             // Расчёт CRC ответа
-            crc = calculateCRC(response, 2);
+            crc = crc16(response, 2);
             crc_high = crc >> 8;
             crc_low = crc & 0xFF;
+
+            // FIXME: почему-то перепутан порядок байт
             response[2] = crc_low;
             response[3] = crc_high;
 
