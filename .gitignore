@@ -1,0 +1,23 @@
+# C++ compiled object files
+*.o
+*.obj
+
+# CMake build directories
+/CMakeFiles/
+/CMakeCache.txt
+/CMakeScripts/
+/Makefile
+/cmake_install.cmake
+/*.cmake
+/*.make
+
+# Generated binaries or executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build output directories
+/bin/
+/build/
+/lib/
