@@ -1,8 +1,28 @@
 #include <iostream>
+#include <cstdint>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <boost/crc.hpp>
+
+// Расчёт CRC16 с полиномом MODBUS
+uint16_t calculateCRC(uint8_t* data, size_t length) {
+    uint16_t crc = 0xFFFF;
+    for (size_t i = 0; i < length; i++) {
+        crc ^= (uint16_t)data[i];        // XOR byte into least sig. byte of crc
+        for (int j = 8; j != 0; j--) {    // Loop over each bit
+            if ((crc & 0x0001) != 0) {      // If the LSB is set
+                crc >>= 1;                    // Shift right and XOR 0xA001
+                crc ^= 0xA001;
+            }
+            else                            // Else LSB is not set
+                crc >>= 1;                    // Just shift right
+        }
+    }
+    return crc;
+}
+
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -78,6 +98,71 @@ int main(int argc, char *argv[]) {
         }
 
         std::cout << "Accepted a connection" << std::endl;
+
+        uint8_t buffer[1024] = {0}; // буфер приёма
+        uint8_t message[4] = {0x80, 0x00, 0x00, 0x00}; // запрос на тестирование канала связи
+        uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+        // Расчёт CRC запроса
+        uint16_t crc = calculateCRC(message, 2);
+        uint8_t crc_high = crc >> 8;
+        uint8_t crc_low = crc & 0xFF;
+
+        std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+
+        // FIXME: почему-то перепутан порядок байт
+        message[2] = crc_low;
+        message[3] = crc_high;
+
+        // Чтение запроса
+        read(newsockfd, buffer, 4);
+
+        std::cout << "Message: ";
+        for (int i = 0; i < 4; i++) {
+           std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+        }
+        std::cout << std::endl;
+
+        // Проверка соостветствия запроса
+        if (memcmp(buffer, message, 4) == 0) {
+
+            // Расчёт CRC ответа
+            crc = calculateCRC(response, 2);
+            crc_high = crc >> 8;
+            crc_low = crc & 0xFF;
+            response[2] = crc_low;
+            response[3] = crc_high;
+
+            // Отправка ответа
+            send(newsockfd, response, 4, 0);
+            printf("Response sent\n");
+        } else {
+            printf("Received message does not match the specified byte sequence\n");
+        }
+
+/*
+        uint8_t buffer[1024] = {0}; // буфер приёма
+        uint8_t message[11] = {0x80, 0x01, 0x01, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x00, 0x00}; // запрос на открытие канала связи
+        uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+        read(newsockfd, buffer, 11);
+
+        // Проверка соостветствия запроса
+        if (memcmp(buffer, message, 11) == 0) {
+
+            // Расчёт CRC ответа
+            uint16_t crc = calculateCRC(response, 2);
+            response[2] = crc >> 8;
+            response[3] = crc & 0xFF;
+
+            // Отправка ответа
+            send(newsockfd, response, 4, 0);
+            printf("Response sent\n");
+        } else {
+            printf("Received message does not match the specified byte sequence\n");
+        }
+*/
+
     }
 
     return 0;

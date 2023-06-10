@@ -1,3 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mercury234-emul)
+find_package(Boost 1.58.0 REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 add_executable(mercury234 main.cpp)
+target_link_libraries(mercury234 ${Boost_LIBRARIES})
