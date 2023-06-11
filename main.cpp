@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 
 #define MAX_CLIENTS 4
+#define BUFFER_SIZE 1024
 #define SOCKET_CREATION_FAILED -1
 #define SOCKET_BINDING_FAILED -2
 #define SOCKET_LISTEN_FAILED -3
@@ -33,8 +34,609 @@ uint16_t crc16(uint8_t* data, size_t length) {
     return crc;
 }
 
+// Тестирование канала связи
+bool test_channel(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[4]  = {0x80, 0x00, 0x00, 0x00};  // запрос на тестирование канала связи
+    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 2);
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Test channel" << std::endl;
+
+    // FIXME: почему-то перепутан порядок байт
+    message[2] = crc_low;
+    message[3] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 4);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+    // read(sockfd, buffer, 4);
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 4) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 2);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[2] = crc_low;
+        response[3] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 4, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 4; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Серийный номер и дата изготовления
+bool get_sn_dof(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x00, 0x00, 0x00};  // запрос на чтение серийного номера и даты изготовления
+    uint8_t response[10] = {0x80, 0x29, 0x5A, 0x40, 0x43, 0x16, 0x06, 0x14, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get serial number and date of manufacture" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 8);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: где-то перепутан порядок байт
+        response[8] = crc_low;
+        response[9] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 10, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 10; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Открытие канала связи
+bool open_channel(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[11]  = {0x80, 0x01, 0x01, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x00, 0x00 };  // запрос на открытие канала связи
+    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 9);
+
+    // FIXME: crc считается неправильно
+    uint8_t crc_high = 0xA8; // crc >> 8;
+    uint8_t crc_low = 0x48; // crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Open communication channel" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[9] = crc_low;
+    message[10] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 11);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 11; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 11) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 2);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[2] = crc_low;
+        response[3] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 4, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 4; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Версия ПО счётчика
+bool get_firmware_version(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x03, 0x00, 0x00}; // запрос на открытие канала связи
+    uint8_t response[6] = {0x80, 0x09, 0x00, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get firmware version" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 4);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[4] = crc_low;
+        response[5] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 6, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 6; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Вариант исполнения
+bool get_device_version(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x12, 0x00, 0x00}; // запрос на открытие канала связи
+    uint8_t response[9] = {0x80, 0xB4, 0xE3, 0xC2, 0x97, 0xDF, 0x58, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get device version" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 7);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[7] = crc_low;
+        response[8] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 9, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 9; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Сетевой адрес
+bool get_net_addr(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x05, 0x00, 0x00}; // запрос на чтение сетевого адреса
+    uint8_t response[5] = {0x80, 0x00, 0x80, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get network address" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 3);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[3] = crc_low;
+        response[4] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 5, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 5; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Закрытие канала связи
+bool close_channel(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[4]  = {0x80, 0x02, 0x00, 0x00}; // запрос на закрытие канала связи
+    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 2);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Close channel" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[2] = crc_low;
+    message[3] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 4);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 4) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 2);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[2] = crc_low;
+        response[3] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 4, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 4; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Расширенный перечень параметров прибора
+bool get_params_ext(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[6]  = {0x80, 0x08, 0x01, 0x00, 0x00, 0x00}; // запрос на расширенный перечень параметров
+    uint8_t response[27] = {0x80, 0x20, 0x57, 0x2F, 0x42, 0x1A, 0x06, 0x12, 0x09, 0x00, 0x00, 0xB4, 0xE3, 0xC2, 0x97, 0xDF, 0x58, 0x7E, 0xF5, 0x32, 0x3A, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 4);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get extended list of parameters" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[4] = crc_low;
+    message[5] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 6);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 6; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 6) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 25);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[25] = crc_low;
+        response[26] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 27, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 27; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// CRC16 ПО счётчика
+bool get_crc16(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x26, 0x00, 0x00}; // запрос на чтение сетевого адреса
+    uint8_t response[5] = {0x80, 0x7E, 0xF5, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get CRC16 of firmware version" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 3);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[3] = crc_low;
+        response[4] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 5, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 5; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+// Коэффициент трансформации
+bool get_trans_ratio(int sockfd) {
+    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
+    uint8_t message[5]  = {0x80, 0x08, 0x02, 0x00, 0x00}; // запрос на чтение сетевого адреса
+    uint8_t response[7] = {0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 3);
+
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low  = crc & 0xFF;
+
+    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+    std::cout << "Get transformation ratio" << std::endl;
+
+    // FIXME: где-то перепутан порядок байт
+    message[3] = crc_low;
+    message[4] = crc_high;
+
+    // Чтение запроса
+    ssize_t num_bytes = read(sockfd, buffer, 5);
+    if (num_bytes < 0) {
+        std::cerr << "Failed to read from socket.\n";
+    } else if (num_bytes == 0) {
+        std::cout << "Client disconnected.\n";
+    } else {
+        // buffer[num_bytes] = '\0';  // Null-terminate the string
+        // std::cout << "Received message: " << buffer << '\n';
+    }
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 5) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 5);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[5] = crc_low;
+        response[6] = crc_high;
+
+        // Отправка ответа
+        send(sockfd, response, 7, 0);
+        std::cout << "Response sent: ";
+        for (int i = 0; i < 7; i++) {
+            std::cout << std::hex << static_cast<int>(response[i]) << " ";
+        }
+        std::cout << std::endl;
+    } else {
+        std::cout << "Received message does not match the specified byte sequence" << std::endl;
+    }
+}
+
+
 // Старт сокета
-int openSocket(int port) {
+int open_socket(int port) {
     int sockfd;
     struct sockaddr_in serv_addr;
 
@@ -70,51 +672,25 @@ void* handle_client(void* arg) {
     client_data* data = static_cast<client_data*>(arg);
     int newsockfd = data->socket;
 
-    // Now you can read/write to the socket as desired.
-    // Be sure to handle any errors and close the socket when done.
-
-    uint8_t buffer[1024] = {0}; // буфер приёма
-    uint8_t message[4] = {0x80, 0x00, 0x00, 0x00}; // запрос на тестирование канала связи
-    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
-
-    // Расчёт CRC запроса
-    uint16_t crc = crc16(message, 2);
-    uint8_t crc_high = crc >> 8;
-    uint8_t crc_low = crc & 0xFF;
-
-    std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
-
-    // FIXME: почему-то перепутан порядок байт
-    message[2] = crc_low;
-    message[3] = crc_high;
-
-    // Чтение запроса
-    read(newsockfd, buffer, 4);
-
-    std::cout << "Message: ";
-    for (int i = 0; i < 4; i++) {
-        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
-    }
-    std::cout << std::endl;
-
-    // Проверка соостветствия запроса
-    if (memcmp(buffer, message, 4) == 0) {
-
-        // Расчёт CRC ответа
-        crc = crc16(response, 2);
-        crc_high = crc >> 8;
-        crc_low = crc & 0xFF;
-
-        // FIXME: почему-то перепутан порядок байт
-        response[2] = crc_low;
-        response[3] = crc_high;
-
-        // Отправка ответа
-        send(newsockfd, response, 4, 0);
-        printf("Response sent\n");
-    } else {
-        printf("Received message does not match the specified byte sequence\n");
-    }
+    test_channel(newsockfd); // Len=4
+    get_sn_dof(newsockfd); // Len=5
+    open_channel(newsockfd); // Len=11
+    get_firmware_version(newsockfd); // Len=5?
+    get_device_version(newsockfd);
+    get_net_addr(newsockfd);
+    open_channel(newsockfd);
+    get_firmware_version(newsockfd);
+    get_device_version(newsockfd);
+    // close_channel(newsockfd);
+    get_firmware_version(newsockfd);
+    get_params_ext(newsockfd);
+    get_device_version(newsockfd);
+    get_params_ext(newsockfd);
+    get_crc16(newsockfd);
+    get_sn_dof(newsockfd);
+    get_device_version(newsockfd);
+    get_crc16(newsockfd);
+    get_trans_ratio(newsockfd);
 
     close(newsockfd);
     delete data;
@@ -122,7 +698,7 @@ void* handle_client(void* arg) {
 }
 
 // Приём подключений
-bool acceptConnections(int sockfd) {
+bool accept_connections(int sockfd) {
     struct sockaddr_in cli_addr; // адрес клиента
     socklen_t clilen = sizeof(cli_addr);
     
@@ -191,36 +767,12 @@ int main(int argc, char *argv[]) {
         std::cout << "Mode: " << mode << std::endl;
         std::cout << "TCP Port: " << port << std::endl;
 
-        int sockfd = openSocket(port);
+        int sockfd = open_socket(port);
 
-        if (!acceptConnections(sockfd)) {
+        if (!accept_connections(sockfd)) {
             std::cerr << "Failed to accept connections.\n";
             return 1;
         }
-
-/*
-        uint8_t buffer[1024] = {0}; // буфер приёма
-        uint8_t message[11] = {0x80, 0x01, 0x01, 0x31, 0x31, 0x31, 0x31, 0x31, 0x31, 0x00, 0x00}; // запрос на открытие канала связи
-        uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
-
-        read(newsockfd, buffer, 11);
-
-        // Проверка соостветствия запроса
-        if (memcmp(buffer, message, 11) == 0) {
-
-            // Расчёт CRC ответа
-            uint16_t crc = calculateCRC(response, 2);
-            response[2] = crc >> 8;
-            response[3] = crc & 0xFF;
-
-            // Отправка ответа
-            send(newsockfd, response, 4, 0);
-            printf("Response sent\n");
-        } else {
-            printf("Received message does not match the specified byte sequence\n");
-        }
-*/
-
     }
 
     return 0;
