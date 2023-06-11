@@ -1,9 +1,20 @@
 #include <iostream>
 #include <cstdint>
+#include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string.h>
+
+#define MAX_CLIENTS 4
+#define SOCKET_CREATION_FAILED -1
+#define SOCKET_BINDING_FAILED -2
+#define SOCKET_LISTEN_FAILED -3
+
+struct client_data {
+    int socket;
+    //
+};
 
 // Расчёт CRC16 с полиномом MODBUS
 uint16_t crc16(uint8_t* data, size_t length) {
@@ -22,6 +33,120 @@ uint16_t crc16(uint8_t* data, size_t length) {
     return crc;
 }
 
+// Старт сокета
+int openSocket(int port) {
+    int sockfd;
+    struct sockaddr_in serv_addr;
+
+    // Creating socket file descriptor
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        std::cerr << "Socket creation failed.\n";
+        return SOCKET_CREATION_FAILED;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(port);
+
+    // Forcefully attaching socket to the port
+    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        std::cerr << "Failed to bind socket to port " << port << ".\n";
+        close(sockfd);
+        return SOCKET_BINDING_FAILED;
+    }
+    
+    if (listen(sockfd, MAX_CLIENTS) < 0) {
+        std::cerr << "Failed to listen on socket.\n";
+        close(sockfd);
+        return SOCKET_LISTEN_FAILED;
+    }
+
+    std::cout << "Server listening on port " << port << ".\n";
+    return sockfd;
+}
+
+// Обработка запросов
+void* handle_client(void* arg) {
+    client_data* data = static_cast<client_data*>(arg);
+    int newsockfd = data->socket;
+
+    // Now you can read/write to the socket as desired.
+    // Be sure to handle any errors and close the socket when done.
+
+    uint8_t buffer[1024] = {0}; // буфер приёма
+    uint8_t message[4] = {0x80, 0x00, 0x00, 0x00}; // запрос на тестирование канала связи
+    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
+
+    // Расчёт CRC запроса
+    uint16_t crc = crc16(message, 2);
+    uint8_t crc_high = crc >> 8;
+    uint8_t crc_low = crc & 0xFF;
+
+    std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
+
+    // FIXME: почему-то перепутан порядок байт
+    message[2] = crc_low;
+    message[3] = crc_high;
+
+    // Чтение запроса
+    read(newsockfd, buffer, 4);
+
+    std::cout << "Message: ";
+    for (int i = 0; i < 4; i++) {
+        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
+    }
+    std::cout << std::endl;
+
+    // Проверка соостветствия запроса
+    if (memcmp(buffer, message, 4) == 0) {
+
+        // Расчёт CRC ответа
+        crc = crc16(response, 2);
+        crc_high = crc >> 8;
+        crc_low = crc & 0xFF;
+
+        // FIXME: почему-то перепутан порядок байт
+        response[2] = crc_low;
+        response[3] = crc_high;
+
+        // Отправка ответа
+        send(newsockfd, response, 4, 0);
+        printf("Response sent\n");
+    } else {
+        printf("Received message does not match the specified byte sequence\n");
+    }
+
+    close(newsockfd);
+    delete data;
+    return nullptr;
+}
+
+// Приём подключений
+bool acceptConnections(int sockfd) {
+    struct sockaddr_in cli_addr; // адрес клиента
+    socklen_t clilen = sizeof(cli_addr);
+    
+    while(true) {
+        int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        if (newsockfd < 0) {
+            std::cerr << "Error accepting new connection.\n";
+            return false;
+        }
+
+        client_data* data = new client_data;
+        data->socket = newsockfd;
+
+        pthread_t thread;
+        if (pthread_create(&thread, nullptr, handle_client, data) != 0) {
+            std::cerr << "Failed to create thread.\n";
+            return false;
+        }
+
+        pthread_detach(thread);
+    }
+
+    return true;
+}
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -66,79 +191,11 @@ int main(int argc, char *argv[]) {
         std::cout << "Mode: " << mode << std::endl;
         std::cout << "TCP Port: " << port << std::endl;
 
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if(sockfd < 0) {
-            std::cerr << "Error opening socket" << std::endl;
+        int sockfd = openSocket(port);
+
+        if (!acceptConnections(sockfd)) {
+            std::cerr << "Failed to accept connections.\n";
             return 1;
-        }
-
-        sockaddr_in serv_addr;
-        memset(&serv_addr, 0, sizeof(serv_addr));
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(port);
-        serv_addr.sin_addr.s_addr = INADDR_ANY;
-
-        if(bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            std::cerr << "Error binding socket" << std::endl;
-            return 1;
-        }
-
-        listen(sockfd, 5);
-
-        std::cout << "Listening on port " << port << std::endl;
-
-        sockaddr_in cli_addr;
-        socklen_t clilen = sizeof(cli_addr);
-
-        int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        if(newsockfd < 0) {
-            std::cerr << "Error accepting connection" << std::endl;
-            return 1;
-        }
-
-        std::cout << "Accepted a connection" << std::endl;
-
-        uint8_t buffer[1024] = {0}; // буфер приёма
-        uint8_t message[4] = {0x80, 0x00, 0x00, 0x00}; // запрос на тестирование канала связи
-        uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
-
-        // Расчёт CRC запроса
-        uint16_t crc = crc16(message, 2);
-        uint8_t crc_high = crc >> 8;
-        uint8_t crc_low = crc & 0xFF;
-
-        std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
-
-        // FIXME: почему-то перепутан порядок байт
-        message[2] = crc_low;
-        message[3] = crc_high;
-
-        // Чтение запроса
-        read(newsockfd, buffer, 4);
-
-        std::cout << "Message: ";
-        for (int i = 0; i < 4; i++) {
-           std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
-        }
-        std::cout << std::endl;
-
-        // Проверка соостветствия запроса
-        if (memcmp(buffer, message, 4) == 0) {
-
-            // Расчёт CRC ответа
-            crc = crc16(response, 2);
-            crc_high = crc >> 8;
-            crc_low = crc & 0xFF;
-
-            // FIXME: почему-то перепутан порядок байт
-            response[2] = crc_low;
-            response[3] = crc_high;
-
-            // Отправка ответа
-            send(newsockfd, response, 4, 0);
-            printf("Response sent\n");
-        } else {
-            printf("Received message does not match the specified byte sequence\n");
         }
 
 /*
