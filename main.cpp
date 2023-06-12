@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cstdint>
 #include <string.h>
@@ -6,6 +7,9 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 #define MAX_CLIENTS 4
 #define MAX_REQUEST_LEN 19
@@ -26,7 +30,6 @@ void print_message(const T* arr, size_t length) {
 }
 
 // Расчёт CRC16 с полиномом MODBUS
-// FIXME: где-то перепутан порядок байт
 uint16_t crc16(const uint8_t* data, size_t length) {
     uint16_t crc = 0xFFFF;
     for (size_t i = 0; i < length; i++) {
@@ -42,6 +45,26 @@ uint16_t crc16(const uint8_t* data, size_t length) {
     }
     return crc;
 }
+
+// Параметры из json-файла
+class Parameter {
+public:
+    uint8_t parameter_number;
+    std::string name;
+    std::vector<uint8_t> device_response;
+    std::string device_response_description;
+
+    Parameter(uint8_t parameter_number, 
+              const std::string& name, 
+              const std::vector<uint8_t>& device_response,
+              const std::string& device_response_description)
+        : parameter_number(parameter_number),
+          name(name),
+          device_response(device_response),
+          device_response_description(device_response_description) {}
+};
+
+std::vector<Parameter> all_parameters;
 
 // Обработка запросов
 class RequestHandler {
@@ -60,9 +83,8 @@ public:
         uint8_t request_body[MAX_REQUEST_LEN - 2] = {0};
         std::copy(request + 1, request + 1 + body_length, request_body);
 
-        uint16_t crc = (request[request_length - 1] << 8) | request[request_length - 2];
-
         // Валидация crc запроса
+        uint16_t crc = (request[request_length - 1] << 8) | request[request_length - 2];
         if (!validate_crc16(request, request_length, crc)) {
             std::cerr << "CRC16 validation failed" << std::endl;
             return;
@@ -101,6 +123,7 @@ private:
     }
 
     // TODO: сделать возврат стандартной ошибки по умолчанию
+    // TODO: сделать все ответы загружаемыми из json-файла
     size_t process_request(uint8_t address, uint8_t* request_body, size_t body_length, uint8_t* response_body) {
         size_t response_length = 0;
         response_body[0] = address;
@@ -117,6 +140,12 @@ private:
             // Открытие канала связи
             // TODO: уровни доступа
             case 0x01:
+                response_body[1] = 0x00;
+                response_length = 2;
+                break;
+            
+            // Закрытие канала связи
+            case 0x02:
                 response_body[1] = 0x00;
                 response_length = 2;
                 break;
@@ -216,66 +245,6 @@ private:
     }
 };
 
-// Закрытие канала связи
-bool close_channel(int sockfd) {
-    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
-    uint8_t message[4]  = {0x80, 0x02, 0x00, 0x00}; // запрос на закрытие канала связи
-    uint8_t response[4] = {0x80, 0x00, 0x00, 0x00}; // ответ на запрос
-
-    // Расчёт CRC запроса
-    uint16_t crc = crc16(message, 2);
-
-    uint8_t crc_high = crc >> 8;
-    uint8_t crc_low  = crc & 0xFF;
-
-    // std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
-    std::cout << "Close channel" << std::endl;
-
-    // FIXME: где-то перепутан порядок байт
-    message[2] = crc_low;
-    message[3] = crc_high;
-
-    // Чтение запроса
-    ssize_t num_bytes = read(sockfd, buffer, 4);
-    if (num_bytes < 0) {
-        std::cerr << "Failed to read from socket.\n";
-    } else if (num_bytes == 0) {
-        std::cout << "Client disconnected.\n";
-    } else {
-        // buffer[num_bytes] = '\0';  // Null-terminate the string
-        // std::cout << "Received message: " << buffer << '\n';
-    }
-
-    std::cout << "Message: ";
-    for (int i = 0; i < 4; i++) {
-        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
-    }
-    std::cout << std::endl;
-
-    // Проверка соостветствия запроса
-    if (memcmp(buffer, message, 4) == 0) {
-
-        // Расчёт CRC ответа
-        crc = crc16(response, 2);
-        crc_high = crc >> 8;
-        crc_low = crc & 0xFF;
-
-        // FIXME: почему-то перепутан порядок байт
-        response[2] = crc_low;
-        response[3] = crc_high;
-
-        // Отправка ответа
-        send(sockfd, response, 4, 0);
-        std::cout << "Response sent: ";
-        for (int i = 0; i < 4; i++) {
-            std::cout << std::hex << static_cast<int>(response[i]) << " ";
-        }
-        std::cout << std::endl;
-    } else {
-        std::cout << "Received message does not match the specified byte sequence" << std::endl;
-    }
-}
-
 // Энергия от сброса
 bool get_current_state(int sockfd) {
     uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
@@ -303,9 +272,6 @@ bool get_current_state(int sockfd) {
         std::cerr << "Failed to read from socket.\n";
     } else if (num_bytes == 0) {
         std::cout << "Client disconnected.\n";
-    } else {
-        // buffer[num_bytes] = '\0';  // Null-terminate the string
-        // std::cout << "Received message: " << buffer << '\n';
     }
 
     message[5] = 0x00; // FIXME: где-то обнуляется старший байт crc
@@ -384,7 +350,7 @@ void* handle_client(void* arg) {
     client_data* data = static_cast<client_data*>(arg);
     int newsockfd = data->socket;
 
-    while(true) {
+    while (true) {
         uint8_t request[MAX_REQUEST_LEN];
         uint8_t response[MAX_RESPONSE_LEN];
 
@@ -410,36 +376,6 @@ void* handle_client(void* arg) {
         send(newsockfd, response, response_length, 0);
     }
 
-#if 0
-    // Подключение конфигуратора
-    test_channel(newsockfd);
-    get_sn_dof(newsockfd);
-    open_channel(newsockfd);
-    get_firmware_version(newsockfd);
-    get_device_version(newsockfd);
-    get_net_addr(newsockfd);
-    open_channel(newsockfd);
-    get_firmware_version(newsockfd);
-    get_device_version(newsockfd);
-    get_firmware_version(newsockfd);
-    get_params_ext(newsockfd);
-    get_device_version(newsockfd);
-    get_params_ext(newsockfd);
-    get_crc16(newsockfd);
-    get_sn_dof(newsockfd);
-    get_device_version(newsockfd);
-    get_crc16(newsockfd);
-    get_trans_ratio(newsockfd);
-
-    // Пункт "Энергия"
-    get_trans_ratio(newsockfd);
-    open_channel(newsockfd);
-    get_firmware_version(newsockfd);
-    get_device_version(newsockfd);
-    get_device_version(newsockfd);
-    get_current_state(newsockfd);
-#endif
-
     close(newsockfd);
     delete data;
     return nullptr;
@@ -450,7 +386,7 @@ bool accept_connections(int sockfd) {
     struct sockaddr_in cli_addr; // адрес клиента
     socklen_t clilen = sizeof(cli_addr);
     
-    while(true) {
+    while (true) {
         int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
         if (newsockfd < 0) {
             std::cerr << "Error accepting new connection.\n";
@@ -474,17 +410,17 @@ bool accept_connections(int sockfd) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    std::string jsonPath;
+    std::string json_path;
     std::string mode;
     int port = 8000;
     bool help = false;
 
-    while((opt = getopt(argc, argv, "j:m:p:h")) != -1)  
+    while ((opt = getopt(argc, argv, "j:m:p:h")) != -1)  
     {  
-        switch(opt)  
+        switch (opt)  
         {  
             case 'j':  
-                jsonPath = optarg;
+                json_path = optarg;
                 break;  
             case 'm':  
                 mode = optarg;
@@ -504,19 +440,65 @@ int main(int argc, char *argv[]) {
         }  
     }  
 
-    if(help) {
-        std::cout << "Usage: ./program -p <path_to_json> -m <mode> -t <tcp_port> [-h]" << std::endl;
+    if (help) {
+        std::cout << "Usage: ./program -j <path_to_json> -m <mode> -p <tcp_port> [-h]" << std::endl;
         std::cout << "-j: Path to the JSON file" << std::endl;
         std::cout << "-m: Mode" << std::endl;
         std::cout << "-p: TCP port to open" << std::endl;
         std::cout << "-h: Display this help message" << std::endl;
     } else {
-        std::cout << "Path to JSON: " << jsonPath << std::endl;
+        std::cout << "Path to JSON: " << json_path << std::endl;
         std::cout << "Mode: " << mode << std::endl;
         std::cout << "TCP Port: " << port << std::endl;
 
-        int sockfd = open_socket(port);
+        // Загрузка json-файла
+        std::ifstream ifs(json_path);
+        if (!ifs.is_open()) {
+            std::cerr << "Failed to open JSON file\n";
+            return 1;
+        }
 
+        json j;
+        try {
+            ifs >> j;
+        }
+        catch (json::parse_error& e) {
+            std::cerr << "Failed to parse the JSON file: " << e.what() << '\n';
+            return 1;
+        }
+
+        // Заполнение массива параметров
+        json parameters = j["parameters"];
+        for (const auto& parameter : parameters) {
+
+            // Конвертация номера параметра из строки в байт (запрос)
+            std::stringstream converter(parameter["parameter_number"].get<std::string>());
+            unsigned int parameter_number_int;
+            converter >> std::hex >> parameter_number_int;
+            uint8_t parameter_number = static_cast<uint8_t>(parameter_number_int);
+
+            // Наименование
+            std::string name = parameter["name"];
+
+            // Ответ
+            std::string device_response_hex = parameter["device_response"];
+            int device_response_len = device_response_hex.length() / 2;
+            std::vector<uint8_t> device_response(device_response_len);
+            for (int i = 0; i < device_response_len; i++) {
+                std::stringstream converter(device_response_hex.substr(i * 2, 2));
+                unsigned int byte;
+                converter >> std::hex >> byte;
+                device_response[i] = static_cast<uint8_t>(byte);
+            }
+
+            // Описание
+            std::string device_response_description = parameter["device_response_description"];
+
+            all_parameters.push_back(Parameter(parameter_number, name, device_response, device_response_description));
+        }      
+
+        // Обработка подключений
+        int sockfd = open_socket(port);
         if (!accept_connections(sockfd)) {
             std::cerr << "Failed to accept connections.\n";
             return 1;
