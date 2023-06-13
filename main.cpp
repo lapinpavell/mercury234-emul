@@ -64,7 +64,7 @@ public:
           device_response_description(device_response_description) {}
 };
 
-std::vector<Parameter> all_parameters;
+std::vector<Parameter> params;
 
 // Обработка запросов
 class RequestHandler {
@@ -122,8 +122,30 @@ private:
         return crc;
     }
 
+    // Заполнение тела ответа
+    uint16_t fill_response_body(uint8_t parameter_number, uint8_t* response_body) {
+        
+        // Цикл поиска по номеру
+        for (const auto& parameter : params) {
+            if (parameter.parameter_number == parameter_number) {
+                int response_body_length = parameter.device_response.size();
+                if (response_body_length > 1 && response_body_length <= MAX_RESPONSE_LEN - 1 - 2) {
+                    int n = response_body_length - 1;
+                    std::copy(parameter.device_response.begin() + 1, 
+                            parameter.device_response.begin() + 1 + n, 
+                            response_body);
+                } else {
+                    // TODO: обработка ошибок
+                    return 0;
+                }
+                return response_body_length;
+            }
+        }
+        // TODO: обработка ошибок
+        return 0;
+    }
+
     // TODO: сделать возврат стандартной ошибки по умолчанию
-    // TODO: сделать все ответы загружаемыми из json-файла
     size_t process_request(uint8_t address, uint8_t* request_body, size_t body_length, uint8_t* response_body) {
         size_t response_length = 0;
         response_body[0] = address;
@@ -152,6 +174,11 @@ private:
 
             // Чтение параметров
             case 0x08:
+
+                // TODO: проверять длину
+                response_length = fill_response_body(request_body[1], &response_body[1]);
+
+#if 0
                  switch (request_body[1]) {
                     default: break;
 
@@ -238,10 +265,12 @@ private:
                         response_length = 5;
                         break;
                 }
+#endif
+
                 break;
         }
 
-        return response_length; // TODO: проверять размер
+        return response_length;
     }
 };
 
@@ -494,7 +523,7 @@ int main(int argc, char *argv[]) {
             // Описание
             std::string device_response_description = parameter["device_response_description"];
 
-            all_parameters.push_back(Parameter(parameter_number, name, device_response, device_response_description));
+            params.push_back(Parameter(parameter_number, name, device_response, device_response_description));
         }      
 
         // Обработка подключений

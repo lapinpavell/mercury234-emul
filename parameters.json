@@ -3,25 +3,25 @@
       {
         "parameter_number": "0x00",
         "name": "Reading the meter's serial number and manufacturing date",
-        "device_response": "0x00",
-        "device_response_description": "4 bytes of serial number and three bytes of production date code in the sequence: day, month, year (without opening the communication channel)"
+        "device_response": "0x295A4043160614",
+        "device_response_description": "4 bytes of serial number and 3 bytes of production date code in the sequence: day, month, year (without opening the communication channel)"
       },
       {
         "parameter_number": "0x01",
-        "name": "Accelerated mode of reading individual device parameters",
-        "device_response": "0x00",
+        "name": "Extended mode of reading individual device parameters",
+        "device_response": "0x20572F421A0612090000B4E3C297DF587EF5323A0C000000",
         "device_response_description": "16 or 24 bytes (see section 1.5)"
       },
       {
         "parameter_number": "0x02",
         "name": "Reading transformation coefficient",
-        "device_response": "0x00",
+        "device_response": "0x00010001",
         "device_response_description": "Two binary bytes for Kn and two binary bytes for Kt"
       },
       {
         "parameter_number": "0x03",
         "name": "Reading firmware version",
-        "device_response": "0x00",
+        "device_response": "0x090000",
         "device_response_description": "3 bytes of a 2/10 code"
       },
       {
@@ -33,7 +33,7 @@
       {
         "parameter_number": "0x05",
         "name": "Reading network address",
-        "device_response": "0x00",
+        "device_response": "0x0080",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
@@ -93,7 +93,7 @@
       {
         "parameter_number": "0x12",
         "name": "Reading execution variant",
-        "device_response": "0x00",
+        "device_response": "0xB4E3C297DF58",
         "device_response_description": "6 (12) binary bytes"
       },
       {
@@ -213,7 +213,7 @@
       {
         "parameter_number": "0x26",
         "name": "Reading device CRC16",
-        "device_response": "0x00",
+        "device_response": "0x7EF5",
         "device_response_description": "2 bytes"
       },
       {
