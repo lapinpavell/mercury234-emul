@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <cstdint>
+#include <ctime>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -21,6 +22,12 @@ using json = nlohmann::json;
 #define SOCKET_BINDING_FAILED -2
 #define SOCKET_LISTEN_FAILED -3
 
+// Флаги имитации задержек, потерь и искажений
+bool enable_latency = false;
+bool enable_packet_loss = false;
+bool enable_distortion = false;
+
+// Форматированный вывод сообщений
 template <typename T>
 void print_message(const T* arr, size_t length) {
     for (size_t i = 0; i < length; ++i) {
@@ -145,13 +152,15 @@ private:
         return 0;
     }
 
-    // TODO: сделать возврат стандартной ошибки по умолчанию
+    // Обработка запроса
     size_t process_request(uint8_t address, uint8_t* request_body, size_t body_length, uint8_t* response_body) {
         size_t response_length = 0;
         response_body[0] = address;
 
         switch (request_body[0]) {
             default: break;
+
+            /* Запросы на работу по каналу связи */
             
             // Тестирование канала связи
             case 0x00:
@@ -172,170 +181,37 @@ private:
                 response_length = 2;
                 break;
 
-            // Чтение параметров
+            /* Чтение параметров */
+
             case 0x08:
-
-                // TODO: проверять длину
                 response_length = fill_response_body(request_body[1], &response_body[1]);
+                break;
+            
+            /* Чтение учтённой энергии и максимумов мощности */
 
-#if 0
-                 switch (request_body[1]) {
-                    default: break;
-
-                    // Серийный номер и дата выпуска
-                    case 0x00:
-                        response_body[1] = 0x29;
-                        response_body[2] = 0x5A;
-                        response_body[3] = 0x40;
-                        response_body[4] = 0x43;
-                        response_body[5] = 0x16;
-                        response_body[6] = 0x06;
-                        response_body[7] = 0x14;
-                        response_length = 8;
-                        break;
-
-                    // Версия ПО счётчика
-                    case 0x03:
-                        response_body[1] = 0x09;
-                        response_body[2] = 0x00;
-                        response_body[3] = 0x00;
-                        response_length = 4;
-                        break;
-                    
-                    // Вариант исполнения
-                    case 0x12:
-                        response_body[1] = 0xB4;
-                        response_body[2] = 0xE3;
-                        response_body[3] = 0xC2;
-                        response_body[4] = 0x97;
-                        response_body[5] = 0xDF;
-                        response_body[6] = 0x58;
-                        response_length = 7;
-                        break;
-                    
-                    // Сетевой адрес
-                    case 0x05:
-                        response_body[1] = 0x00;
-                        response_body[2] = 0x80;
-                        response_length = 3;
-                        break;
-                    
-                    // Расширенный перечень параметров прибора
-                    case 0x01:
-                        response_body[1] = 0x20;
-                        response_body[2] = 0x57;
-                        response_body[3] = 0x2F;
-                        response_body[4] = 0x42;
-                        response_body[5] = 0x1A;
-                        response_body[6] = 0x06;
-                        response_body[7] = 0x12;
-                        response_body[8] = 0x09;
-                        response_body[9] = 0x00;
-                        response_body[10] = 0x00;
-                        response_body[11] = 0xB4;
-                        response_body[12] = 0xE3;
-                        response_body[13] = 0xC2;
-                        response_body[14] = 0x97;
-                        response_body[15] = 0xDF;
-                        response_body[16] = 0x58;
-                        response_body[17] = 0x7E;
-                        response_body[18] = 0xF5;
-                        response_body[19] = 0x32;
-                        response_body[20] = 0x3A;
-                        response_body[21] = 0x0C;
-                        response_body[22] = 0x00;
-                        response_body[23] = 0x00;
-                        response_body[24] = 0x00;
-                        response_length = 25;
-                        break;
-
-                    // crc16 ПО счётчика
-                    case 0x26:
-                        response_body[1] = 0x7E;
-                        response_body[2] = 0xF5;
-                        response_length = 3;
-                        break;
-                    
-                    // Коэффициент трансформации
-                    case 0x02:
-                        response_body[1] = 0x00;
-                        response_body[2] = 0x01;
-                        response_body[3] = 0x00;
-                        response_body[4] = 0x01;
-                        response_length = 5;
-                        break;
-                }
-#endif
-
+            // Чтение активной и реактивной энергии А+, А-, R+, R-
+            case 0x05:
+                break;
+            
+            // Чтение поквадрантной реактивной энергии R1, R2, R3, R4
+            case 0x15:
+                break;
+            
+            // Чтение максимумов мощности по тарифам
+            case 0x17:
+                break;
+            
+            // Чтение расширенных массивов суточных и месячных срезов активной и реактивной энергии
+            case 0x18:
                 break;
         }
 
+        // TODO: проверять длину
         return response_length;
     }
 };
 
-// Энергия от сброса
-bool get_current_state(int sockfd) {
-    uint8_t buffer[BUFFER_SIZE] = {0}; // буфер приёма
-    // uint8_t message[6]  = {0x80, 0x05, 0x40, 0x00, 0x00, 0x00}; // запрос на чтение энегрии за текущие сутки
-    uint8_t message[6]  = {0x80, 0x08, 0x14, 0xE0, 0x00, 0x00}; // запрос на чтение энегрии за текущие сутки
-    // uint8_t response[19] = {0x80, 0x00, 0x00, 0x70, 0x0A, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xE8, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; // ответ на запрос
-    uint8_t response[19] = {0x80, 0x00, 0x00, 0x6D, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF1, 0x00, 0x00, 0x00}; // ответ на запрос
-
-    // Расчёт CRC запроса
-    uint16_t crc = crc16(message, 4);
-
-    uint8_t crc_high = crc >> 8;
-    uint8_t crc_low  = crc & 0xFF;
-
-    std::cout << "CRC16: " << std::hex << static_cast<int>(crc_high) << " " << static_cast<int>(crc_low) << std::endl;
-    std::cout << "Get current state" << std::endl;
-
-    // FIXME: где-то перепутан порядок байт
-    message[4] = crc_low;
-    message[5] = crc_high;
-
-    // Чтение запроса
-    ssize_t num_bytes = read(sockfd, buffer, 5);
-    if (num_bytes < 0) {
-        std::cerr << "Failed to read from socket.\n";
-    } else if (num_bytes == 0) {
-        std::cout << "Client disconnected.\n";
-    }
-
-    message[5] = 0x00; // FIXME: где-то обнуляется старший байт crc
-    std::cout << "Message: ";
-    for (int i = 0; i < 6; i++) {
-        std::cout << std::hex << static_cast<int>(buffer[i]) << " ";
-    }
-    std::cout << std::endl;
-
-    // Проверка соостветствия запроса
-    if (memcmp(buffer, message, 6) == 0) {
-
-        // Расчёт CRC ответа
-        crc = crc16(response, 17);
-        crc_high = crc >> 8;
-        crc_low = crc & 0xFF;
-
-        // FIXME: почему-то перепутан порядок байт
-        response[17] = crc_low;
-        response[18] = crc_high;
-
-        // Отправка ответа
-        send(sockfd, response, 19, 0);
-        std::cout << "Response sent: ";
-        for (int i = 0; i < 19; i++) {
-            std::cout << std::hex << static_cast<int>(response[i]) << " ";
-        }
-        std::cout << std::endl;
-    } else {
-        std::cout << "Received message does not match the specified byte sequence" << std::endl;
-    }
-}
-
-
-// Старт сокета
+// Открытие сокета
 int open_socket(int port) {
     int sockfd;
     struct sockaddr_in serv_addr;
@@ -383,6 +259,17 @@ void* handle_client(void* arg) {
         uint8_t request[MAX_REQUEST_LEN];
         uint8_t response[MAX_RESPONSE_LEN];
 
+        // Имитация задержек
+        srand(time(0));
+        if (enable_latency && rand() % 10 < 3) { // шанс ~30%
+            usleep(1000); // 1мс
+        }
+
+        // Имитация потери пакетов
+        if (enable_packet_loss && rand() % 10 < 2) { // шанс ~20%
+            continue;
+        }
+
         // Чтение запроса
         ssize_t request_length = read(newsockfd, request, sizeof(request));
         if (request_length < 0) {
@@ -391,12 +278,22 @@ void* handle_client(void* arg) {
             std::cout << "Client disconnected.\n";
         }
 
+        // Имитация искажений запросов
+        if (enable_distortion && rand() % 10 < 1) { // шанс ~10%
+            request[rand() % request_length] ^= 0xFF;
+        }
+
         std::cout << "Request: ";
         print_message(request, request_length);
 
         // Подготовка ответа
         size_t response_length;
         handler.handle(request, request_length, response, response_length);
+
+        // Имитация искажений ответов
+        if (enable_distortion && rand() % 10 < 1) { // шанс ~10%
+            response[rand() % response_length] ^= 0xFF;
+        }
 
         std::cout << "Response: ";
         print_message(response, response_length);
@@ -452,7 +349,9 @@ int main(int argc, char *argv[]) {
                 json_path = optarg;
                 break;  
             case 'm':  
-                mode = optarg;
+                if (strchr(optarg, 'l')) enable_latency = true;
+                if (strchr(optarg, 'p')) enable_packet_loss = true;
+                if (strchr(optarg, 'd')) enable_distortion = true;
                 break;
             case 'p':
                 port = std::stoi(optarg);
@@ -470,15 +369,17 @@ int main(int argc, char *argv[]) {
     }  
 
     if (help) {
-        std::cout << "Usage: ./program -j <path_to_json> -m <mode> -p <tcp_port> [-h]" << std::endl;
+        std::cout << "Usage: ./program -j <path_to_json> -m <mode> [l][p][d] -p <tcp_port> [-h]" << std::endl;
         std::cout << "-j: Path to the JSON file" << std::endl;
-        std::cout << "-m: Mode" << std::endl;
+        std::cout << "-m: Mode (latency, packet loss, distortion)" << std::endl;
         std::cout << "-p: TCP port to open" << std::endl;
         std::cout << "-h: Display this help message" << std::endl;
+        std::cout << std::endl;
     } else {
         std::cout << "Path to JSON: " << json_path << std::endl;
-        std::cout << "Mode: " << mode << std::endl;
+        std::cout << "Mode: " << enable_latency << enable_packet_loss << enable_distortion << std::endl;
         std::cout << "TCP Port: " << port << std::endl;
+        std::cout << std::endl;
 
         // Загрузка json-файла
         std::ifstream ifs(json_path);
@@ -523,12 +424,13 @@ int main(int argc, char *argv[]) {
             // Описание
             std::string device_response_description = parameter["device_response_description"];
 
+            // Заполнение массива параметров
             params.push_back(Parameter(parameter_number, name, device_response, device_response_description));
         }      
 
         // Обработка подключений
         int sockfd = open_socket(port);
-        if (!accept_connections(sockfd)) {
+        if (!accept_connections(sockfd)) { // TODO: режим имитации задержек, потерь и искажений
             std::cerr << "Failed to accept connections.\n";
             return 1;
         }
