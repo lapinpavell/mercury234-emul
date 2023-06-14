@@ -1,253 +1,253 @@
 {
     "parameters": [
       {
-        "parameter_number": "0x00",
+        "code": "0x00",
         "name": "Reading the meter's serial number and manufacturing date",
         "device_response": "0x295A4043160614",
         "device_response_description": "4 bytes of serial number and 3 bytes of production date code in the sequence: day, month, year (without opening the communication channel)"
       },
       {
-        "parameter_number": "0x01",
+        "code": "0x01",
         "name": "Extended mode of reading individual device parameters",
         "device_response": "0x20572F421A0612090000B4E3C297DF587EF5323A0C000000",
         "device_response_description": "16 or 24 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x02",
+        "code": "0x02",
         "name": "Reading transformation coefficient",
         "device_response": "0x00010001",
         "device_response_description": "Two binary bytes for Kn and two binary bytes for Kt"
       },
       {
-        "parameter_number": "0x03",
+        "code": "0x03",
         "name": "Reading firmware version",
         "device_response": "0x090000",
         "device_response_description": "3 bytes of a 2/10 code"
       },
       {
-        "parameter_number": "0x04",
+        "code": "0x04",
         "name": "Reading timeout multiplier for additional interface",
         "device_response": "0x00",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
-        "parameter_number": "0x05",
+        "code": "0x05",
         "name": "Reading network address",
         "device_response": "0x0080",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
-        "parameter_number": "0x06",
+        "code": "0x06",
         "name": "Reading indication modes",
         "device_response": "0x00",
         "device_response_description": "16 binary bytes"
       },
       {
-        "parameter_number": "0x07",
+        "code": "0x07",
         "name": "Reading transition time values for daylight saving and standard time",
         "device_response": "0x00",
         "device_response_description": "2/10 code, 6 bytes in the sequence: hour, day, month of transition to daylight saving time; hour, day, month of transition to standard time"
       },
       {
-        "parameter_number": "0x08",
+        "code": "0x08",
         "name": "Reading power limit control time and relay auto-switching parameters",
         "device_response": "0x00",
         "device_response_description": "Bytes when reading relay shutdown parameters\nBytes when reading auto-switching parameters"
       },
       {
-        "parameter_number": "0x09",
+        "code": "0x09",
         "name": "Reading programmable flags",
         "device_response": "0x00",
         "device_response_description": "2 bytes - positional code"
       },
       {
-        "parameter_number": "0x0A",
+        "code": "0x0A",
         "name": "Reading status bytes",
         "device_response": "0x00",
         "device_response_description": "6 bytes - positional code"
       },
       {
-        "parameter_number": "0x0B",
+        "code": "0x0B",
         "name": "Reading device location",
         "device_response": "0x00",
         "device_response_description": "4 binary bytes"
       },
       {
-        "parameter_number": "0x0C",
+        "code": "0x0C",
         "name": "Reading morning and evening power maximums schedule",
         "device_response": "0x00",
         "device_response_description": "8 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x0D",
+        "code": "0x0D",
         "name": "Reading morning and evening power maximums values (see section 1.5)",
         "device_response": "0x00",
         "device_response_description": "16 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x11",
+        "code": "0x11",
         "name": "Reading auxiliary parameters: instant active, reactive, apparent power, phase and line voltages, current, power factor, frequency, and imbalance",
         "device_response": "0x00",
         "device_response_description": "3 binary bytes. The two most significant bits of the high byte indicate the position of the apparent power vector and should be masked (see section 1.5)"
       },
       {
-        "parameter_number": "0x12",
+        "code": "0x12",
         "name": "Reading execution variant",
         "device_response": "0xB4E3C297DF58",
         "device_response_description": "6 (12) binary bytes"
       },
       {
-        "parameter_number": "0x13",
+        "code": "0x13",
         "name": "Reading parameters of the last record of the main array of average power",
         "device_response": "0x00",
         "device_response_description": "9 binary bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x14",
+        "code": "0x14",
         "name": "Reading fixed data",
         "device_response": "0x00",
         "device_response_description": "See section 1.5 and figure 3.6"
       },
       {
-        "parameter_number": "0x15",
+        "code": "0x15",
         "name": "Reading parameters of the last record of the additional array of average power consumption",
         "device_response": "0x00",
         "device_response_description": "9 binary bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x16",
+        "code": "0x16",
         "name": "Reading auxiliary parameters: instant active, reactive, total power, phase and line voltages, current, power factor, frequency, imbalance",
         "device_response": "0x00",
         "device_response_description": "12 (9) binary bytes. The two most significant bits of the high byte indicate the position of the total power vector and should be masked (see section 1.5)"
       },
       {
-        "parameter_number": "0x17",
+        "code": "0x17",
         "name": "Reading tariff mode state: single-tariff/multi-tariff",
         "device_response": "0x00",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
-        "parameter_number": "0x17",
+        "code": "0x17",
         "name": "Reading tariff schedule type: Mercury/SPODES (extension byte 0x00)",
         "device_response": "0x00",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
-        "parameter_number": "0x18",
+        "code": "0x18",
         "name": "Reading load control status word",
         "device_response": "0x00",
         "device_response_description": "2 binary bytes"
       },
       {
-        "parameter_number": "0x19",
+        "code": "0x19",
         "name": "Reading power limit",
         "device_response": "0x00",
         "device_response_description": "3 binary bytes"
       },
       {
-        "parameter_number": "0x1A",
+        "code": "0x1A",
         "name": "Reading energy limit for tariff 1-4",
         "device_response": "0x00",
         "device_response_description": "4 binary bytes"
       },
       {
-        "parameter_number": "0x1B",
+        "code": "0x1B",
         "name": "Reading meter display parameters (for indicated tariffs)",
         "device_response": "0x00",
         "device_response_description": "8 positional bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x1C",
+        "code": "0x1C",
         "name": "Reading meter display parameters (for indication periods)",
         "device_response": "0x00",
         "device_response_description": "4 binary bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x1D",
+        "code": "0x1D",
         "name": "Reading main interface timeout multiplier",
         "device_response": "0x00",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
-        "parameter_number": "0x1E",
+        "code": "0x1E",
         "name": "Reading technical losses accounting mode parameters",
         "device_response": "0x00",
         "device_response_description": "2 positional bytes"
       },
       {
-        "parameter_number": "0x1F",
+        "code": "0x1F",
         "name": "Reading technical losses power",
         "device_response": "0x00",
         "device_response_description": "12 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x20",
+        "code": "0x20",
         "name": "Reading permissible values",
         "device_response": "0x00",
         "device_response_description": "16 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x21",
+        "code": "0x21",
         "name": "Reading averaging time values",
         "device_response": "0x00",
         "device_response_description": "2 bytes in the sequence: voltage averaging time; frequency averaging time"
       },
       {
-        "parameter_number": "0x22",
+        "code": "0x22",
         "name": "Reading tariff schedule",
         "device_response": "0x00",
         "device_response_description": "16 bytes"
       },
       {
-        "parameter_number": "0x23",
+        "code": "0x23",
         "name": "Reading holiday schedule",
         "device_response": "0x00",
         "device_response_description": "4 bytes"
       },
       {
-        "parameter_number": "0x24",
+        "code": "0x24",
         "name": "Reading long operation status",
         "device_response": "0x00",
         "device_response_description": "2 bytes (see section 1.5)"
       },
       {
-        "parameter_number": "0x26",
+        "code": "0x26",
         "name": "Reading device CRC16",
         "device_response": "0x7EF5",
         "device_response_description": "2 bytes"
       },
       {
-        "parameter_number": "0x27",
+        "code": "0x27",
         "name": "Reading PLC1 parameters",
         "device_response": "0x00",
         "device_response_description": "(see section 1.5)"
       },
       {
-        "parameter_number": "0x28",
+        "code": "0x28",
         "name": "Reading right channel exchange parameters",
         "device_response": "0x00",
         "device_response_description": "2 bytes"
       },
       {
-        "parameter_number": "0x2B",
+        "code": "0x2B",
         "name": "Reading programmable function byte",
         "device_response": "0x00",
         "device_response_description": "1 byte"
       },
       {
-        "parameter_number": "0x2D",
+        "code": "0x2D",
         "name": "Reading calculation day value",
         "device_response": "0x00",
         "device_response_description": "1 byte"
       },
       {
-        "parameter_number": "0x2E",
+        "code": "0x2E",
         "name": "Reading disconnect switch and limiters mode",
         "device_response": "0x00",
         "device_response_description": "(see section 4.4.34)"
       },
       {
-        "parameter_number": "0x2F",
+        "code": "0x2F",
         "name": "Reading fixed events array",
         "device_response": "0x00",
         "device_response_description": "(see section 4.4.34.7)"

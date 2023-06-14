@@ -56,16 +56,16 @@ uint16_t crc16(const uint8_t* data, size_t length) {
 // Параметры из json-файла
 class Parameter {
 public:
-    uint8_t parameter_number;
+    uint8_t code;
     std::string name;
     std::vector<uint8_t> device_response;
     std::string device_response_description;
 
-    Parameter(uint8_t parameter_number, 
+    Parameter(uint8_t code, 
               const std::string& name, 
               const std::vector<uint8_t>& device_response,
               const std::string& device_response_description)
-        : parameter_number(parameter_number),
+        : code(code),
           name(name),
           device_response(device_response),
           device_response_description(device_response_description) {}
@@ -130,11 +130,11 @@ private:
     }
 
     // Заполнение тела ответа
-    uint16_t fill_response_body(uint8_t parameter_number, uint8_t* response_body) {
+    uint16_t fill_response_body(uint8_t code, uint8_t* response_body) {
         
         // Цикл поиска по номеру
         for (const auto& parameter : params) {
-            if (parameter.parameter_number == parameter_number) {
+            if (parameter.code == code) {
                 int response_body_length = parameter.device_response.size();
                 if (response_body_length > 1 && response_body_length <= MAX_RESPONSE_LEN - 1 - 2) {
                     int n = response_body_length - 1;
@@ -278,10 +278,12 @@ void* handle_client(void* arg) {
             std::cout << "Client disconnected.\n";
         }
 
+#if 0
         // Имитация искажений запросов
         if (enable_distortion && rand() % 10 < 1) { // шанс ~10%
             request[rand() % request_length] ^= 0xFF;
         }
+#endif
 
         std::cout << "Request: ";
         print_message(request, request_length);
@@ -402,10 +404,10 @@ int main(int argc, char *argv[]) {
         for (const auto& parameter : parameters) {
 
             // Конвертация номера параметра из строки в байт (запрос)
-            std::stringstream converter(parameter["parameter_number"].get<std::string>());
-            unsigned int parameter_number_int;
-            converter >> std::hex >> parameter_number_int;
-            uint8_t parameter_number = static_cast<uint8_t>(parameter_number_int);
+            std::stringstream converter(parameter["code"].get<std::string>());
+            unsigned int code_int;
+            converter >> std::hex >> code_int;
+            uint8_t code = static_cast<uint8_t>(code_int);
 
             // Наименование
             std::string name = parameter["name"];
@@ -425,12 +427,12 @@ int main(int argc, char *argv[]) {
             std::string device_response_description = parameter["device_response_description"];
 
             // Заполнение массива параметров
-            params.push_back(Parameter(parameter_number, name, device_response, device_response_description));
+            params.push_back(Parameter(code, name, device_response, device_response_description));
         }      
 
         // Обработка подключений
         int sockfd = open_socket(port);
-        if (!accept_connections(sockfd)) { // TODO: режим имитации задержек, потерь и искажений
+        if (!accept_connections(sockfd)) {
             std::cerr << "Failed to accept connections.\n";
             return 1;
         }
