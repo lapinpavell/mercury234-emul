@@ -1,0 +1,264 @@
+{
+    "Data": [
+        {
+            "code": "0x05",
+            "array": [
+                {
+                    "array_code": "0x00",
+                    "array_description": "Read active and reactive energy (From reset)",
+                    "device_response": "0x45B3FA0EC214AD37F65DC89E417E6C62"
+                },
+                {
+                    "array_code": "0x10",
+                    "array_description": "Read active and reactive energy (For the current year)",
+                    "device_response": "0xA5D6F1B2C3E4075869D1E2F3456789AB"
+                },
+                {
+                    "array_code": "0x20",
+                    "array_description": "Read active and reactive energy (For the previous year)",
+                    "device_response": "0x15C26D38E49FB05A16B7C8D9EA23F4E5"
+                },
+                {
+                    "array_code": "0x30",
+                    "array_description": "Read active and reactive energy (For the month)",
+                    "device_response": "0xC2D4A6E8B0F1C3456789ABCDEF123456"
+                },
+                {
+                    "array_code": "0x40",
+                    "array_description": "Read active and reactive energy (For the current day)",
+                    "device_response": "0x2F34A5C6E8391728D5A6B7C8D9EAF1B2"
+                },
+                {
+                    "array_code": "0x50",
+                    "array_description": "Read active and reactive energy (For the previous day)",
+                    "device_response": "0x2E41B63D895C2A6F47B8D9EAF1234567"
+                },
+                {
+                    "array_code": "0x60",
+                    "array_description": "Read active and reactive energy (Per-phase values of accounted active energy in the forward direction)",
+                    "device_response": "0x39A2B3C4D5E6F7081920A1B2C3D4E5F6"
+                },
+                {
+                    "array_code": "0x90",
+                    "array_description": "Read active and reactive energy (At the beginning of the current year)",
+                    "device_response": "0x41B3C5D7E9F1A2B3C4D5E6F789012345"
+                },
+                {
+                    "array_code": "0xA0",
+                    "array_description": "Read active and reactive energy (At the beginning of the previous year)",
+                    "device_response": "0xA4B6C8E0F2A3B4C5D6E7F89012345678"
+                },
+                {
+                    "array_code": "0xB0",
+                    "array_description": "Read active and reactive energy (At the beginning of the month)",
+                    "device_response": "0x19E3A5C7E9F1B2C3D4E5F67890123456"
+                },
+                {
+                    "array_code": "0xC0",
+                    "array_description": "Read active and reactive energy (At the start of the current day)",
+                    "device_response": "0x2F3B4D5E7F9A1B2C3D4E5F6789012345"
+                },
+                {
+                    "array_code": "0xD0",
+                    "array_description": "Read active and reactive energy (At the beginning of the previous day)",
+                    "device_response": "0x2C3D4E5F6A7B8C9D0E1F234567890123"
+                }
+            ]
+        },
+        {
+            "code": "0x15",
+            "array": [
+                {
+                    "array_code": "0x00",
+                    "array_description": "Read quadrant reactive energy (From reset)",
+                    "device_response": "0x45B3FA0EC214AD37F65DC89E417E6C62"
+                },
+                {
+                    "array_code": "0x10",
+                    "array_description": "Read quadrant reactive energy (For the current year)",
+                    "device_response": "0xA5D6F1B2C3E4075869D1E2F3456789AB"
+                },
+                {
+                    "array_code": "0x20",
+                    "array_description": "Read quadrant reactive energy (For the previous year)",
+                    "device_response": "0x15C26D38E49FB05A16B7C8D9EA23F4E5"
+                },
+                {
+                    "array_code": "0x30",
+                    "array_description": "Read quadrant reactive energy (For the month)",
+                    "device_response": "0xC2D4A6E8B0F1C3456789ABCDEF123456"
+                },
+                {
+                    "array_code": "0x40",
+                    "array_description": "Read quadrant reactive energy (For the current day)",
+                    "device_response": "0x2F34A5C6E8391728D5A6B7C8D9EAF1B2"
+                },
+                {
+                    "array_code": "0x50",
+                    "array_description": "Read quadrant reactive energy (For the previous day)",
+                    "device_response": "0x2E41B63D895C2A6F47B8D9EAF1234567"
+                },
+                {
+                    "array_code": "0x60",
+                    "array_description": "Read quadrant reactive energy (Per-phase values of accounted active energy in the forward direction)",
+                    "device_response": "0x39A2B3C4D5E6F7081920A1B2C3D4E5F6"
+                },
+                {
+                    "array_code": "0x90",
+                    "array_description": "Read quadrant reactive energy (At the beginning of the current year)",
+                    "device_response": "0x41B3C5D7E9F1A2B3C4D5E6F789012345"
+                },
+                {
+                    "array_code": "0xA0",
+                    "array_description": "Read quadrant reactive energy (At the beginning of the previous year)",
+                    "device_response": "0xA4B6C8E0F2A3B4C5D6E7F89012345678"
+                },
+                {
+                    "array_code": "0xB0",
+                    "array_description": "Read quadrant reactive energy (At the beginning of the month)",
+                    "device_response": "0x19E3A5C7E9F1B2C3D4E5F67890123456"
+                },
+                {
+                    "array_code": "0xC0",
+                    "array_description": "Read quadrant reactive energy (At the start of the current day)",
+                    "device_response": "0x2F3B4D5E7F9A1B2C3D4E5F6789012345"
+                },
+                {
+                    "array_code": "0xD0",
+                    "array_description": "Read quadrant reactive energy (At the beginning of the previous day)",
+                    "device_response": "0x2C3D4E5F6A7B8C9D0E1F234567890123"
+                }
+            ]
+        },
+        {
+            "code": "0x17",
+            "array": [
+                {
+                    "array_code": "0x00",
+                    "array_description": "Read power maxima by tariffs (From reset)",
+                    "device_response": "0x45B3FA0EC214AD37F65DC89E417E6C62"
+                },
+                {
+                    "array_code": "0x10",
+                    "array_description": "Read power maxima by tariffs (For the current year)",
+                    "device_response": "0xA5D6F1B2C3E4075869D1E2F3456789AB"
+                },
+                {
+                    "array_code": "0x20",
+                    "array_description": "Read power maxima by tariffs (For the previous year)",
+                    "device_response": "0x15C26D38E49FB05A16B7C8D9EA23F4E5"
+                },
+                {
+                    "array_code": "0x30",
+                    "array_description": "Read power maxima by tariffs (For the month)",
+                    "device_response": "0xC2D4A6E8B0F1C3456789ABCDEF123456"
+                },
+                {
+                    "array_code": "0x40",
+                    "array_description": "Read power maxima by tariffs (For the current day)",
+                    "device_response": "0x2F34A5C6E8391728D5A6B7C8D9EAF1B2"
+                },
+                {
+                    "array_code": "0x50",
+                    "array_description": "Read power maxima by tariffs (For the previous day)",
+                    "device_response": "0x2E41B63D895C2A6F47B8D9EAF1234567"
+                },
+                {
+                    "array_code": "0x60",
+                    "array_description": "Read power maxima by tariffs (Per-phase values of accounted active energy in the forward direction)",
+                    "device_response": "0x39A2B3C4D5E6F7081920A1B2C3D4E5F6"
+                },
+                {
+                    "array_code": "0x90",
+                    "array_description": "Read power maxima by tariffs (At the beginning of the current year)",
+                    "device_response": "0x41B3C5D7E9F1A2B3C4D5E6F789012345"
+                },
+                {
+                    "array_code": "0xA0",
+                    "array_description": "Read power maxima by tariffs (At the beginning of the previous year)",
+                    "device_response": "0xA4B6C8E0F2A3B4C5D6E7F89012345678"
+                },
+                {
+                    "array_code": "0xB0",
+                    "array_description": "Read power maxima by tariffs (At the beginning of the month)",
+                    "device_response": "0x19E3A5C7E9F1B2C3D4E5F67890123456"
+                },
+                {
+                    "array_code": "0xC0",
+                    "array_description": "Read power maxima by tariffs (At the start of the current day)",
+                    "device_response": "0x2F3B4D5E7F9A1B2C3D4E5F6789012345"
+                },
+                {
+                    "array_code": "0xD0",
+                    "array_description": "Read power maxima by tariffs (At the beginning of the previous day)",
+                    "device_response": "0x2C3D4E5F6A7B8C9D0E1F234567890123"
+                }
+            ]
+        },
+        {
+            "code": "0x18",
+            "array": [
+                {
+                    "array_code": "0x00",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (From reset)",
+                    "device_response": "0x45B3FA0EC214AD37F65DC89E417E6C62"
+                },
+                {
+                    "array_code": "0x10",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (For the current year)",
+                    "device_response": "0xA5D6F1B2C3E4075869D1E2F3456789AB"
+                },
+                {
+                    "array_code": "0x20",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (For the previous year)",
+                    "device_response": "0x15C26D38E49FB05A16B7C8D9EA23F4E5"
+                },
+                {
+                    "array_code": "0x30",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (For the month)",
+                    "device_response": "0xC2D4A6E8B0F1C3456789ABCDEF123456"
+                },
+                {
+                    "array_code": "0x40",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (For the current day)",
+                    "device_response": "0x2F34A5C6E8391728D5A6B7C8D9EAF1B2"
+                },
+                {
+                    "array_code": "0x50",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (For the previous day)",
+                    "device_response": "0x2E41B63D895C2A6F47B8D9EAF1234567"
+                },
+                {
+                    "array_code": "0x60",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (Per-phase values of accounted active energy in the forward direction)",
+                    "device_response": "0x39A2B3C4D5E6F7081920A1B2C3D4E5F6"
+                },
+                {
+                    "array_code": "0x90",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (At the beginning of the current year)",
+                    "device_response": "0x41B3C5D7E9F1A2B3C4D5E6F789012345"
+                },
+                {
+                    "array_code": "0xA0",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (At the beginning of the previous year)",
+                    "device_response": "0xA4B6C8E0F2A3B4C5D6E7F89012345678"
+                },
+                {
+                    "array_code": "0xB0",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (At the beginning of the month)",
+                    "device_response": "0x19E3A5C7E9F1B2C3D4E5F67890123456"
+                },
+                {
+                    "array_code": "0xC0",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (At the start of the current day)",
+                    "device_response": "0x2F3B4D5E7F9A1B2C3D4E5F6789012345"
+                },
+                {
+                    "array_code": "0xD0",
+                    "array_description": "Read extended arrays of daily and monthly snapshots of active and reactive energy (At the beginning of the previous day)",
+                    "device_response": "0x2C3D4E5F6A7B8C9D0E1F234567890123"
+                }
+            ]
+        }
+    ]
+}
