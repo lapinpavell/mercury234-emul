@@ -53,6 +53,30 @@ uint16_t crc16(const uint8_t* data, size_t length) {
     return crc;
 }
 
+// Конвертация строки в байт
+uint8_t hex_string_to_byte(const std::string& hex_string) {
+    std::stringstream converter(hex_string);
+    unsigned int code_int;
+    converter >> std::hex >> code_int;
+    uint8_t code = static_cast<uint8_t>(code_int);
+    return code;
+}
+
+// Конвертация строки в массив
+std::vector<uint8_t> hex_string_to_vector(const std::string& hex_string) {
+    int response_length = hex_string.length() / 2;
+    std::vector<uint8_t> response(response_length);
+
+    for (int i = 0; i < response_length; i++) {
+        std::stringstream converter(hex_string.substr(i * 2, 2));
+        unsigned int byte;
+        converter >> std::hex >> byte;
+        response[i] = static_cast<uint8_t>(byte);
+    }
+
+    return response;
+}
+
 // Параметры из json-файла
 class Parameter {
 public:
@@ -71,7 +95,33 @@ public:
           device_response_description(device_response_description) {}
 };
 
+// Показания из json-файла
+class DataItem {
+public:
+    uint8_t array_code;
+    std::vector<uint8_t> device_response;
+    std::string array_description;
+
+    DataItem(uint8_t array_code,
+             std::vector<uint8_t> device_response,
+             std::string array_description)
+        : array_code(array_code),
+          device_response(device_response),
+          array_description(array_description) {}
+};
+
+class Data {
+public:
+    uint8_t code;
+    std::vector<DataItem> array;
+
+    Data(uint8_t code, std::vector<DataItem> array) : code(code), array(array) {}
+};
+
+// Массивы с параметрами и текущими показаниями
 std::vector<Parameter> params;
+// std::vector<DataItem> arrays;
+std::vector<Data> datas;
 
 // Обработка запросов
 class RequestHandler {
@@ -101,6 +151,12 @@ public:
         uint8_t response_body[MAX_RESPONSE_LEN - 2] = {0};
         response_length = process_request(address, request_body, body_length, response_body) + 2;
 
+        // Проверка длины ответа
+        if (response_length <= 0) {
+            std::cerr << "Response generation failed" << std::endl;
+            return;
+        }
+
         // Добавление crc16 к ответу
         uint16_t response_crc = calculate_crc16(response_body, response_length - 2);
         response_body[response_length - 2] = response_crc & 0x00FF;
@@ -129,10 +185,10 @@ private:
         return crc;
     }
 
-    // Заполнение тела ответа
+    // Заполнение тела ответа на запрос параметров
     uint16_t fill_response_body(uint8_t code, uint8_t* response_body) {
-        
-        // Цикл поиска по номеру
+
+        // Поиск по коду запроса
         for (const auto& parameter : params) {
             if (parameter.code == code) {
                 int response_body_length = parameter.device_response.size();
@@ -141,14 +197,50 @@ private:
                     std::copy(parameter.device_response.begin() + 1, 
                             parameter.device_response.begin() + 1 + n, 
                             response_body);
+                    std::cout << parameter.name << std::endl;
                 } else {
-                    // TODO: обработка ошибок
+                    std::cout << "Bad response body length" << std::endl;
                     return 0;
                 }
                 return response_body_length;
             }
         }
-        // TODO: обработка ошибок
+
+        std::cout << "Parameter not foud" << std::endl;
+        return 0;
+    }
+
+    // Заполнение тела ответа на запрос текущих показаний
+    uint16_t fill_response_body(uint8_t code, uint8_t array_code, uint8_t* response_body) {
+
+        // Поиск по коду запроса
+        for (const auto& data : datas) {
+            if (data.code == code) {
+
+                // Поиск по коду массива
+                std::vector<DataItem> arrays = data.array;
+                for (const auto& array: arrays) {
+                    if (array.array_code == array_code) {
+                        int response_body_length = array.device_response.size();
+                        if (response_body_length > 1 && 
+                            response_body_length <= MAX_RESPONSE_LEN - 1 - 2) {
+                            int n = response_body_length - 1;
+                            std::copy(array.device_response.begin() + 1, 
+                            array.device_response.begin() + 1 + n, 
+                            response_body);
+                            std::cout << array.array_description << std::endl;
+                        } else {
+                            std::cout << "Bad response body length" << std::endl;
+                            return 0;
+                        }
+                        return response_body_length;
+
+                    }
+                }
+            }
+        }
+
+        std::cout << "Array of measurements not foud" << std::endl;
         return 0;
     }
 
@@ -159,54 +251,24 @@ private:
 
         switch (request_body[0]) {
             default: break;
-
-            /* Запросы на работу по каналу связи */
-            
-            // Тестирование канала связи
-            case 0x00:
-                response_body[1] = 0x00;
-                response_length = 2;
-                break;
-            
-            // Открытие канала связи
-            // TODO: уровни доступа
-            case 0x01:
-                response_body[1] = 0x00;
-                response_length = 2;
-                break;
-            
-            // Закрытие канала связи
-            case 0x02:
+           
+            // Тестирование, открытие и закрытие канала связи
+            case 0x00: case 0x01: case 0x02:
                 response_body[1] = 0x00;
                 response_length = 2;
                 break;
 
-            /* Чтение параметров */
-
+            // Чтение параметров
             case 0x08:
                 response_length = fill_response_body(request_body[1], &response_body[1]);
                 break;
             
-            /* Чтение учтённой энергии и максимумов мощности */
-
-            // Чтение активной и реактивной энергии А+, А-, R+, R-
-            case 0x05:
-                break;
-            
-            // Чтение поквадрантной реактивной энергии R1, R2, R3, R4
-            case 0x15:
-                break;
-            
-            // Чтение максимумов мощности по тарифам
-            case 0x17:
-                break;
-            
-            // Чтение расширенных массивов суточных и месячных срезов активной и реактивной энергии
-            case 0x18:
+            // Чтение учтённой энергии и максимумов мощности
+            case 0x05: case 0x15: case 0x17: case 0x18:
+                response_length = fill_response_body(request_body[0], request_body[1], &response_body[1]);
                 break;
         }
 
-        // TODO: проверять длину
         return response_length;
     }
 };
@@ -338,22 +400,25 @@ bool accept_connections(int sockfd) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    std::string json_path;
+    std::string settings_path;
+    std::string data_path;
     std::string mode;
     int port = 8000;
     bool help = false;
 
-    while ((opt = getopt(argc, argv, "j:m:p:h")) != -1)  
+    while ((opt = getopt(argc, argv, "s:d:m:p:h")) != -1)  
     {  
         switch (opt)  
         {  
-            case 'j':  
-                json_path = optarg;
-                break;  
+            case 's':  
+                settings_path = optarg;
+                break;
+            case 'd':
+                data_path = optarg; 
             case 'm':  
                 if (strchr(optarg, 'l')) enable_latency = true;
                 if (strchr(optarg, 'p')) enable_packet_loss = true;
-                if (strchr(optarg, 'd')) enable_distortion = true;
+                if (strchr(optarg, 'i')) enable_distortion = true;
                 break;
             case 'p':
                 port = std::stoi(optarg);
@@ -371,64 +436,100 @@ int main(int argc, char *argv[]) {
     }  
 
     if (help) {
-        std::cout << "Usage: ./program -j <path_to_json> -m <mode> [l][p][d] -p <tcp_port> [-h]" << std::endl;
-        std::cout << "-j: Path to the JSON file" << std::endl;
+        std::cout << "Usage: ./mercury234 -s <path_to_settings_json> -d <path_to_data_json> -m <mode> [l][p][i] -p <tcp_port> [-h]" << std::endl;
+        std::cout << "-s: Path to the settings JSON file" << std::endl;
+        std::cout << "-d: Path to the data JSON file" << std::endl;
         std::cout << "-m: Mode (latency, packet loss, distortion)" << std::endl;
         std::cout << "-p: TCP port to open" << std::endl;
         std::cout << "-h: Display this help message" << std::endl;
         std::cout << std::endl;
     } else {
-        std::cout << "Path to JSON: " << json_path << std::endl;
+        std::cout << "-s: Path to the settings JSON file: " << settings_path << std::endl;
+        std::cout << "-d: Path to the data JSON file: " << data_path << std::endl;
         std::cout << "Mode: " << enable_latency << enable_packet_loss << enable_distortion << std::endl;
         std::cout << "TCP Port: " << port << std::endl;
         std::cout << std::endl;
 
-        // Загрузка json-файла
-        std::ifstream ifs(json_path);
-        if (!ifs.is_open()) {
-            std::cerr << "Failed to open JSON file\n";
+        // Загрузка json-файла с параметрами
+        std::ifstream ifss(settings_path);
+        if (!ifss.is_open()) {
+            std::cerr << "Failed to open settings JSON file" << std::endl;
             return 1;
         }
 
-        json j;
+        json s;
         try {
-            ifs >> j;
+            ifss >> s;
         }
         catch (json::parse_error& e) {
-            std::cerr << "Failed to parse the JSON file: " << e.what() << '\n';
+            std::cerr << "Failed to parse the settings JSON file: " << e.what() << std::endl;
+            return 1;
+        }
+
+        // Загрузка json-файла с текущими показаниями
+        std::ifstream ifsd(data_path);
+        if (!ifsd.is_open()) {
+            std::cerr << "Failed to open data JSON file" << std::endl;
+            return 1;
+        }
+
+        json d;
+        try {
+            ifsd >> d;
+        }
+        catch (json::parse_error& e) {
+            std::cerr << "Failed to parse the JSON file: " << e.what() << std::endl;
             return 1;
         }
 
         // Заполнение массива параметров
-        json parameters = j["parameters"];
+        json parameters = s["parameters"];
         for (const auto& parameter : parameters) {
 
-            // Конвертация номера параметра из строки в байт (запрос)
-            std::stringstream converter(parameter["code"].get<std::string>());
-            unsigned int code_int;
-            converter >> std::hex >> code_int;
-            uint8_t code = static_cast<uint8_t>(code_int);
+            // Запрос (код параметра)
+            uint8_t code = hex_string_to_byte(parameter["code"].get<std::string>());
 
             // Наименование
             std::string name = parameter["name"];
 
             // Ответ
             std::string device_response_hex = parameter["device_response"];
-            int device_response_len = device_response_hex.length() / 2;
-            std::vector<uint8_t> device_response(device_response_len);
-            for (int i = 0; i < device_response_len; i++) {
-                std::stringstream converter(device_response_hex.substr(i * 2, 2));
-                unsigned int byte;
-                converter >> std::hex >> byte;
-                device_response[i] = static_cast<uint8_t>(byte);
-            }
+            std::vector<uint8_t> device_response = hex_string_to_vector(device_response_hex);
 
             // Описание
             std::string device_response_description = parameter["device_response_description"];
 
             // Заполнение массива параметров
             params.push_back(Parameter(code, name, device_response, device_response_description));
-        }      
+        }
+
+        // Заполнение массива показаний
+        json data_arrays = d["data"];
+        for (const auto& data_element : data_arrays) {
+
+            // Код параметра (запрос)
+            uint8_t code = hex_string_to_byte(data_element["code"].get<std::string>());
+            
+            std::vector<DataItem> arrs;
+            for (const auto& array_element : data_element["array"]) {
+
+                // Код массива (запрос)
+                uint8_t array_code = hex_string_to_byte(array_element["array_code"].get<std::string>());
+
+                // print_message(&array_code, 1);
+
+                // Ответ
+                std::string device_response_hex = array_element["device_response"];
+                std::vector<uint8_t> device_response = hex_string_to_vector(device_response_hex);
+
+                // Описание
+                std::string array_description = array_element["array_description"];
+                
+                arrs.push_back(DataItem(array_code, device_response, array_description));
+            }
+
+            datas.push_back(Data(code, arrs));
+        }
 
         // Обработка подключений
         int sockfd = open_socket(port);
