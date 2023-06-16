@@ -110,6 +110,7 @@ public:
           array_description(array_description) {}
 };
 
+// Массив показаний
 class Data {
 public:
     uint8_t code;
@@ -120,7 +121,6 @@ public:
 
 // Массивы с параметрами и текущими показаниями
 std::vector<Parameter> params;
-// std::vector<DataItem> arrays;
 std::vector<Data> datas;
 
 // Обработка запросов
@@ -273,12 +273,11 @@ private:
     }
 };
 
-// Открытие сокета
+// Запуск сокета
 int open_socket(int port) {
     int sockfd;
     struct sockaddr_in serv_addr;
 
-    // Создание сокета
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         std::cerr << "Socket creation failed.\n";
         return SOCKET_CREATION_FAILED;
@@ -288,14 +287,12 @@ int open_socket(int port) {
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = htons(port);
 
-    // Подключение к порту
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         std::cerr << "Failed to bind socket to port " << port << ".\n";
         close(sockfd);
         return SOCKET_BINDING_FAILED;
     }
-    
-    // Слушать через сокет
+
     if (listen(sockfd, MAX_CLIENTS) < 0) {
         std::cerr << "Failed to listen on socket.\n";
         close(sockfd);
@@ -516,8 +513,6 @@ int main(int argc, char *argv[]) {
                 // Код массива (запрос)
                 uint8_t array_code = hex_string_to_byte(array_element["array_code"].get<std::string>());
 
-                // print_message(&array_code, 1);
-
                 // Ответ
                 std::string device_response_hex = array_element["device_response"];
                 std::vector<uint8_t> device_response = hex_string_to_vector(device_response_hex);
@@ -525,9 +520,11 @@ int main(int argc, char *argv[]) {
                 // Описание
                 std::string array_description = array_element["array_description"];
                 
+                // Заполнение показаний
                 arrs.push_back(DataItem(array_code, device_response, array_description));
             }
 
+            // Заполнение массива показаний
             datas.push_back(Data(code, arrs));
         }
 

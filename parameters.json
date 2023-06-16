@@ -27,7 +27,7 @@
       {
         "code": "0x04",
         "name": "Reading timeout multiplier for additional interface",
-        "device_response": "0x00",
+        "device_response": "0x0001",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
@@ -39,55 +39,55 @@
       {
         "code": "0x06",
         "name": "Reading indication modes",
-        "device_response": "0x00",
+        "device_response": "0x00000006000000000000000000000000",
         "device_response_description": "16 binary bytes"
       },
       {
         "code": "0x07",
         "name": "Reading transition time values for daylight saving and standard time",
-        "device_response": "0x00",
+        "device_response": "0x020703030710",
         "device_response_description": "2/10 code, 6 bytes in the sequence: hour, day, month of transition to daylight saving time; hour, day, month of transition to standard time"
       },
       {
         "code": "0x08",
         "name": "Reading power limit control time and relay auto-switching parameters",
-        "device_response": "0x00",
+        "device_response": "0x1E00",
         "device_response_description": "Bytes when reading relay shutdown parameters\nBytes when reading auto-switching parameters"
       },
       {
         "code": "0x09",
         "name": "Reading programmable flags",
-        "device_response": "0x00",
+        "device_response": "0x8421",
         "device_response_description": "2 bytes - positional code"
       },
       {
         "code": "0x0A",
         "name": "Reading status bytes",
-        "device_response": "0x00",
+        "device_response": "0x000000000400",
         "device_response_description": "6 bytes - positional code"
       },
       {
         "code": "0x0B",
         "name": "Reading device location",
-        "device_response": "0x00",
+        "device_response": "0x80827366",
         "device_response_description": "4 binary bytes"
       },
       {
         "code": "0x0C",
         "name": "Reading morning and evening power maximums schedule",
-        "device_response": "0x00",
+        "device_response": "0x0009001100180020",
         "device_response_description": "8 bytes (see section 1.5)"
       },
       {
         "code": "0x0D",
         "name": "Reading morning and evening power maximums values (see section 1.5)",
-        "device_response": "0x00",
+        "device_response": "0xE8040000FFFFFFFF0C050000230F0000",
         "device_response_description": "16 bytes (see section 1.5)"
       },
       {
         "code": "0x11",
         "name": "Reading auxiliary parameters: instant active, reactive, apparent power, phase and line voltages, current, power factor, frequency, and imbalance",
-        "device_response": "0x00",
+        "device_response": "0x005B56",
         "device_response_description": "3 binary bytes. The two most significant bits of the high byte indicate the position of the apparent power vector and should be masked (see section 1.5)"
       },
       {
@@ -99,13 +99,13 @@
       {
         "code": "0x13",
         "name": "Reading parameters of the last record of the main array of average power",
-        "device_response": "0x00",
+        "device_response": "0x00010A09000403081E",
         "device_response_description": "9 binary bytes (see section 1.5)"
       },
       {
         "code": "0x14",
         "name": "Reading fixed data",
-        "device_response": "0x00",
+        "device_response": "0x0040E7290040E7290000000000000000",
         "device_response_description": "See section 1.5 and figure 3.6"
       },
       {
@@ -123,91 +123,91 @@
       {
         "code": "0x17",
         "name": "Reading tariff mode state: single-tariff/multi-tariff",
-        "device_response": "0x00",
+        "device_response": "0x0000",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
         "code": "0x17",
         "name": "Reading tariff schedule type: Mercury/SPODES (extension byte 0x00)",
-        "device_response": "0x00",
+        "device_response": "0x0000",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
         "code": "0x18",
         "name": "Reading load control status word",
-        "device_response": "0x00",
+        "device_response": "0x0902",
         "device_response_description": "2 binary bytes"
       },
       {
         "code": "0x19",
         "name": "Reading power limit",
-        "device_response": "0x00",
+        "device_response": "0x001400",
         "device_response_description": "3 binary bytes"
       },
       {
         "code": "0x1A",
         "name": "Reading energy limit for tariff 1-4",
-        "device_response": "0x00",
+        "device_response": "0x00001400",
         "device_response_description": "4 binary bytes"
       },
       {
         "code": "0x1B",
         "name": "Reading meter display parameters (for indicated tariffs)",
-        "device_response": "0x00",
+        "device_response": "0x1F001F001F001F00",
         "device_response_description": "8 positional bytes (see section 1.5)"
       },
       {
         "code": "0x1C",
         "name": "Reading meter display parameters (for indication periods)",
-        "device_response": "0x00",
+        "device_response": "0xC12D0F1E",
         "device_response_description": "4 binary bytes (see section 1.5)"
       },
       {
         "code": "0x1D",
         "name": "Reading main interface timeout multiplier",
-        "device_response": "0x00",
+        "device_response": "0x0001",
         "device_response_description": "2 binary bytes (first byte = 0)"
       },
       {
         "code": "0x1E",
         "name": "Reading technical losses accounting mode parameters",
-        "device_response": "0x00",
+        "device_response": "0xC03F",
         "device_response_description": "2 positional bytes"
       },
       {
         "code": "0x1F",
         "name": "Reading technical losses power",
-        "device_response": "0x00",
+        "device_response": "0x881388138813881388138813",
         "device_response_description": "12 bytes (see section 1.5)"
       },
       {
         "code": "0x20",
         "name": "Reading permissible values",
-        "device_response": "0x00",
+        "device_response": "0x805046A4513C5AA861561374139C13BA13",
         "device_response_description": "16 bytes (see section 1.5)"
       },
       {
         "code": "0x21",
         "name": "Reading averaging time values",
-        "device_response": "0x00",
+        "device_response": "0x140A",
         "device_response_description": "2 bytes in the sequence: voltage averaging time; frequency averaging time"
       },
       {
         "code": "0x22",
         "name": "Reading tariff schedule",
-        "device_response": "0x00",
+        "device_response": "0x004000270069002B0072003400560038",
         "device_response_description": "16 bytes"
       },
       {
         "code": "0x23",
         "name": "Reading holiday schedule",
-        "device_response": "0x00",
+        "device_response": "0x08000000",
         "device_response_description": "4 bytes"
       },
       {
         "code": "0x24",
         "name": "Reading long operation status",
-        "device_response": "0x00",
+        "device_response": "0x0402",
         "device_response_description": "2 bytes (see section 1.5)"
       },
       {
@@ -219,37 +219,37 @@
       {
         "code": "0x27",
         "name": "Reading PLC1 parameters",
-        "device_response": "0x00",
+        "device_response": "0x0000000000000000",
         "device_response_description": "(see section 1.5)"
       },
       {
         "code": "0x28",
         "name": "Reading right channel exchange parameters",
-        "device_response": "0x00",
+        "device_response": "0x000102",
         "device_response_description": "2 bytes"
       },
       {
         "code": "0x2B",
         "name": "Reading programmable function byte",
-        "device_response": "0x00",
+        "device_response": "0x0012",
         "device_response_description": "1 byte"
       },
       {
         "code": "0x2D",
         "name": "Reading calculation day value",
-        "device_response": "0x00",
+        "device_response": "0x0016",
         "device_response_description": "1 byte"
       },
       {
         "code": "0x2E",
         "name": "Reading disconnect switch and limiters mode",
-        "device_response": "0x00",
+        "device_response": "0x0004",
         "device_response_description": "(see section 4.4.34)"
       },
       {
         "code": "0x2F",
         "name": "Reading fixed events array",
-        "device_response": "0x00",
+        "device_response": "0x11111111000000000000000000000000",
         "device_response_description": "(see section 4.4.34.7)"
       }         
     ]
